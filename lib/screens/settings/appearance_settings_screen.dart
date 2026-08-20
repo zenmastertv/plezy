@@ -45,6 +45,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             _themeSelector(),
             _languageSelector(context),
             _densitySelector(),
+            _cardSpacingSelector(),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             _viewModeSelector(),
             _episodePosterModeSelector(),
@@ -97,6 +98,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 subtitle: t.settings.showHeroSectionDescription,
               ),
             _continueWatchingActionSelector(),
+            SettingSwitchTile(
+              pref: SettingsService.preferJellyfinThumbArtwork,
+              icon: Symbols.panorama_rounded,
+              title: t.settings.preferJellyfinThumbArtwork,
+              subtitle: t.settings.preferJellyfinThumbArtworkDescription,
+            ),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,
@@ -328,6 +335,41 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 max: AutomotiveUiScale.max,
                 divisions: 20,
                 onChanged: (value) => SettingsService.instance.write(SettingsService.automotiveUiScale, value),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _cardSpacingSelector() {
+    return SettingValueBuilder<double>(
+      pref: SettingsService.hubCardGap,
+      builder: (context, gap, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: .start,
+            children: [
+              Row(
+                children: [
+                  const AppIcon(Symbols.space_bar_rounded, fill: 1),
+                  const SizedBox(width: 16),
+                  Text(t.settings.cardSpacing, style: settingsOptionTitleStyle(context)),
+                  const Spacer(),
+                  Text('${gap.round()} px', style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FocusableSlider(
+                value: gap,
+                min: HubCardGap.min,
+                max: HubCardGap.max,
+                // Whole even pixels: the gap is split across two cards, so odd
+                // values would land the padding on half-pixels.
+                divisions: (HubCardGap.max - HubCardGap.min) ~/ 2,
+                onChanged: (value) => SettingsService.instance.write(SettingsService.hubCardGap, value),
               ),
             ],
           ),

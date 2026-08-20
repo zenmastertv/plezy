@@ -699,6 +699,74 @@ void main() {
     });
   });
 
+  group("MediaItem landscape Thumb preference (Jellyfin ImageTags['Thumb'])", () {
+    const episode = JellyfinMediaItem(
+      id: 'ep1',
+      kind: MediaKind.episode,
+      thumbPath: '/primary',
+      artPath: '/backdrop',
+      landscapeThumbPath: '/landscape',
+      grandparentThumbPath: '/series-poster',
+    );
+    const movie = JellyfinMediaItem(
+      id: 'mv1',
+      kind: MediaKind.movie,
+      thumbPath: '/poster',
+      artPath: '/backdrop',
+      landscapeThumbPath: '/landscape',
+    );
+
+    test('is inert unless the caller opts in', () {
+      expect(episode.posterThumb(mode: EpisodePosterMode.episodeThumbnail), '/primary');
+      expect(movie.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true), '/backdrop');
+    });
+
+    test('replaces the episode screenshot on a wide card', () {
+      expect(episode.posterThumb(mode: EpisodePosterMode.episodeThumbnail, preferLandscapeThumb: true), '/landscape');
+    });
+
+    test('replaces the movie backdrop in a mixed hub', () {
+      expect(
+        movie.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true, preferLandscapeThumb: true),
+        '/landscape',
+      );
+    });
+
+    test('leaves 2:3 poster slots alone', () {
+      // Series-poster mode and an unmixed movie row both render 2:3, where a
+      // 16:9 image would letterbox.
+      expect(episode.posterThumb(mode: EpisodePosterMode.seriesPoster, preferLandscapeThumb: true), '/series-poster');
+      expect(movie.posterThumb(mode: EpisodePosterMode.episodeThumbnail, preferLandscapeThumb: true), '/poster');
+    });
+
+    test('falls back to the un-preferred artwork when the Thumb cannot be served', () {
+      expect(
+        episode.posterThumbFallback(mode: EpisodePosterMode.episodeThumbnail, preferLandscapeThumb: true),
+        '/primary',
+      );
+      expect(
+        movie.posterThumbFallback(
+          mode: EpisodePosterMode.episodeThumbnail,
+          mixedHubContext: true,
+          preferLandscapeThumb: true,
+        ),
+        '/backdrop',
+      );
+    });
+
+    test('an item without a Thumb tag behaves exactly as before', () {
+      const bare = JellyfinMediaItem(id: 'ep2', kind: MediaKind.episode, thumbPath: '/primary');
+      expect(bare.posterThumb(mode: EpisodePosterMode.episodeThumbnail, preferLandscapeThumb: true), '/primary');
+      expect(bare.posterThumbFallback(mode: EpisodePosterMode.episodeThumbnail, preferLandscapeThumb: true), isNull);
+    });
+
+    test('Plex items have no landscape Thumb to prefer', () {
+      const plexEpisode = PlexMediaItem(id: 'p1', kind: MediaKind.episode, thumbPath: '/primary');
+      expect(plexEpisode.landscapeThumbPath, isNull);
+      expect(plexEpisode.posterThumb(mode: EpisodePosterMode.episodeThumbnail, preferLandscapeThumb: true), '/primary');
+    });
+  });
+
   group('MediaItem.displayTitle', () {
     test('episode prefers grandparent (show) title', () {
       final ep = testMediaItem(

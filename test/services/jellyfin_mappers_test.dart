@@ -169,6 +169,91 @@ void main() {
       ]);
     });
 
+    test("maps ImageTags['Thumb'] to landscapeThumbPath and absolutizes it", () {
+      const absolutizer = JellyfinImageAbsolutizer(baseUrl: 'https://jellyfin.example', accessToken: 'secret');
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'ep-1',
+          'Type': 'Episode',
+          'ImageTags': {'Primary': 'primarytag', 'Thumb': 'thumbtag'},
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: absolutizer,
+      )!;
+
+      expect(item.thumbPath, 'https://jellyfin.example/Items/ep-1/Images/Primary?tag=primarytag&api_key=secret');
+      expect(item.landscapeThumbPath, 'https://jellyfin.example/Items/ep-1/Images/Thumb?tag=thumbtag&api_key=secret');
+    });
+
+    test('an episode inherits the series Thumb through ParentThumbItemId', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'ep-3',
+          'Type': 'Episode',
+          'SeriesId': 'series-1',
+          'ImageTags': {'Primary': 'screenshot'},
+          'ParentThumbItemId': 'series-1',
+          'ParentThumbImageTag': 'seriesthumb',
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.landscapeThumbPath, '/Items/series-1/Images/Thumb?tag=seriesthumb');
+    });
+
+    test('an episode falls back to SeriesThumbImageTag when no parent walk ran', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'ep-4', 'Type': 'Episode', 'SeriesId': 'series-2', 'SeriesThumbImageTag': 'seriesthumb-2'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.landscapeThumbPath, '/Items/series-2/Images/Thumb?tag=seriesthumb-2');
+    });
+
+    test("an episode's own Thumb outranks the inherited one", () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'ep-5',
+          'Type': 'Episode',
+          'ImageTags': {'Thumb': 'ownthumb'},
+          'ParentThumbItemId': 'series-3',
+          'ParentThumbImageTag': 'seriesthumb-3',
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.landscapeThumbPath, '/Items/ep-5/Images/Thumb?tag=ownthumb');
+    });
+
+    test('a movie never inherits a Thumb from its collection folder', () {
+      // The server's parent walk terminates on the CollectionFolder, so
+      // inheriting here would give every movie in a library the same image.
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'movie-9', 'Type': 'Movie', 'ParentThumbItemId': 'lib-1', 'ParentThumbImageTag': 'libthumb'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.landscapeThumbPath, isNull);
+    });
+
+    test('leaves landscapeThumbPath null when the server sends no Thumb tag', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'ep-2',
+          'Type': 'Episode',
+          'ImageTags': {'Primary': 'primarytag'},
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.landscapeThumbPath, isNull);
+    });
+
     test('does not treat Jellyfin PlayCount as watched when Played is false', () {
       final json = {
         'Id': 'started-only',

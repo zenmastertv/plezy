@@ -102,7 +102,7 @@ class JellyfinImageAbsolutizer {
     final grandparentBackdropPaths = item.grandparentBackdropPaths
         ?.map((path) => absolutize(path)!)
         .toList(growable: false);
-    return item.copyWith(
+    final absolutized = item.copyWith(
       thumbPath: absolutize(item.thumbPath),
       artPath: backdropPaths == null || backdropPaths.isEmpty ? absolutize(item.artPath) : backdropPaths.first,
       backdropPaths: backdropPaths,
@@ -121,6 +121,12 @@ class JellyfinImageAbsolutizer {
           ?.map((r) => MediaRole(id: r.id, tag: r.tag, role: r.role, thumbPath: absolutize(r.thumbPath)))
           .toList(),
     );
+    // `landscapeThumbPath` exists only on the Jellyfin variant, so it isn't
+    // part of the sealed base's copyWith and needs its own pass.
+    return switch (absolutized) {
+      JellyfinMediaItem jellyfin => jellyfin.copyWith(landscapeThumbPath: absolutize(jellyfin.landscapeThumbPath)),
+      _ => absolutized,
+    };
   }
 }
 
@@ -254,6 +260,11 @@ class JellyfinMappers {
       grandparentArtPath: grandparentBackdropPaths.firstOrNull,
       grandparentBackdropPaths: grandparentBackdropPaths.isEmpty ? null : grandparentBackdropPaths,
       thumbPath: _selfImagePath(id, item, 'Primary') ?? albumPrimaryImage,
+      // Only populated when the request opted into `Thumb` via
+      // [jellyfinHubRowImageQueryParameters]. Every other browse call
+      // leaves both the item's own tag and the inherited parent tags absent,
+      // so this stays null there.
+      landscapeThumbPath: _landscapeThumbImage(id, item, kind),
       artPath: backdropPaths.firstOrNull,
       backdropPaths: backdropPaths.isEmpty ? null : backdropPaths,
       // Episodes/seasons don't carry their own logo — Jellyfin exposes the
@@ -673,6 +684,43 @@ class JellyfinMappers {
     if (parentId == null || parentId.isEmpty) return const [];
     final paths = _backdropImagePaths(parentId, item['ParentBackdropImageTags']);
     return paths.isEmpty ? [_itemImagePath(parentId, 'Backdrop', imageIndex: 0)] : paths;
+  }
+
+  /// Landscape `Thumb` artwork for [MediaItem.landscapeThumbPath].
+  ///
+  /// Episodes and seasons almost never carry their own `Thumb` — the series
+  /// does — so they fall back to the inherited one. Jellyfin fills
+  /// `ParentThumbItemId`/`ParentThumbImageTag` by walking up from the item
+  /// until it finds a parent with a Thumb, but only when the request enabled
+  /// the Thumb image type in the first place; `SeriesThumbImageTag` covers
+  /// servers that stamp the series tag without running that walk.
+  ///
+  /// The inheritance is deliberately **not** extended to movies. Their walk
+  /// terminates on the CollectionFolder, so a library with folder artwork
+  /// would hand every movie in it the same image.
+  static String? _landscapeThumbImage(String id, Map<String, dynamic> item, MediaKind kind) {
+    final own = _selfImagePath(id, item, 'Thumb');
+    if (own != null) return own;
+    if (kind != MediaKind.episode && kind != MediaKind.season) return null;
+    return _parentThumbImage(item) ?? _seriesThumbImage(item);
+  }
+
+  static String? _parentThumbImage(Map<String, dynamic> item) {
+    final parentId = item['ParentThumbItemId'] as String?;
+    if (parentId == null || parentId.isEmpty) return null;
+    final tag = item['ParentThumbImageTag'] as String?;
+    return _itemImagePath(parentId, 'Thumb', tag: tag);
+  }
+
+  /// Unlike [_parentThumbImage] the id here is the series regardless of whether
+  /// it has a Thumb, so an absent tag means "no image" rather than "untagged
+  /// image" — returning a tagless URL would only produce a 404.
+  static String? _seriesThumbImage(Map<String, dynamic> item) {
+    final seriesId = item['SeriesId'] as String?;
+    if (seriesId == null || seriesId.isEmpty) return null;
+    final tag = item['SeriesThumbImageTag'] as String?;
+    if (tag == null || tag.isEmpty) return null;
+    return _itemImagePath(seriesId, 'Thumb', tag: tag);
   }
 
   /// Parent logo helper — episodes/seasons inherit the series' logo via

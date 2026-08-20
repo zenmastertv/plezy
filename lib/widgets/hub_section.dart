@@ -521,7 +521,12 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
               focusNode: _hubFocusNode,
               onKeyEvent: _handleKeyEvent,
               child: SettingsBuilder(
-                prefs: const [SettingsService.libraryDensity, SettingsService.episodePosterMode],
+                prefs: [
+                  SettingsService.libraryDensity,
+                  SettingsService.episodePosterMode,
+                  SettingsService.preferJellyfinThumbArtwork,
+                  SettingsService.hubCardGap,
+                ],
                 builder: (context) => LayoutBuilder(
                   builder: (context, constraints) {
                     final svc = SettingsService.instanceOrNull;
@@ -566,12 +571,22 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     final containerHeight = posterHeight + (isTv ? 48 : 33);
                     final focusBorderWidth = FocusTheme.focusBorderWidth;
                     final focusExtra = focusBorderWidth * 2; // border on both sides
-                    _itemExtent = cardWidth + focusExtra + 4;
+
+                    // User-tunable gap between adjacent cards. Both forms below
+                    // contribute the same total extent, so `_itemExtent` — which
+                    // is what centres a card under d-pad/keyboard navigation —
+                    // stays correct for inset and normal rows alike.
+                    final cardGap = svc.read(SettingsService.hubCardGap);
+                    final cardPadding = widget.inset
+                        ? EdgeInsets.only(right: cardGap)
+                        : EdgeInsets.symmetric(horizontal: cardGap / 2);
+                    _itemExtent = cardWidth + focusExtra + cardGap;
 
                     // Everything the card closures capture; a change flushes
                     // the memo so cached cards can't carry stale geometry.
                     final cardEpoch = (
                       cardWidth,
+                      cardGap,
                       posterHeight,
                       useWideLayout,
                       isMixedHub,
@@ -611,9 +626,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                             if (index == widget.hub.items.length) {
                               return Padding(
                                 key: _itemKeyFor(index),
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: cardPadding,
                                 child: FocusBuilders.buildLockedFocusWrapper(
                                   context: context,
                                   isFocused: isItemFocused,
@@ -663,9 +676,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                                 !CardInflationBudget.tryTake()) {
                               scheduleSkeletonUpgrade();
                               return Padding(
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: cardPadding,
                                 child: SizedBox(width: cardWidth, child: const SkeletonMediaCard()),
                               );
                             }
@@ -678,9 +689,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                               salt: isItemFocused,
                               build: () => Padding(
                                 key: _itemKeyFor(index),
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: cardPadding,
                                 child: FocusBuilders.buildLockedFocusWrapper(
                                   context: context,
                                   isFocused: isItemFocused,

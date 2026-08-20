@@ -175,6 +175,18 @@ class _LibraryDensityPref extends Pref<int> {
       svc.writeInt(key, value.clamp(LibraryDensity.min, LibraryDensity.max));
 }
 
+/// Bounds for [SettingsService.hubCardGap], the horizontal space between two
+/// adjacent cards in a hub row.
+///
+/// Cards inset their own artwork by 3px a side, so the gap a user actually sees
+/// is this plus 6 — which is why 0 still leaves the rows legible rather than
+/// fusing the artwork together.
+class HubCardGap {
+  static const double min = 0;
+  static const double max = 24;
+  static const double defaultValue = 8;
+}
+
 class AutomotiveUiScale {
   static const double min = 1.0;
   static const double max = 2.0;
@@ -609,6 +621,18 @@ class SettingsService extends BaseSharedPreferencesService {
   static const automotiveUiScale = _AutomotiveUiScalePref();
   static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');
   static const episodePosterMode = _EpisodePosterModePref();
+
+  /// Prefer Jellyfin/Emby's dedicated landscape `Thumb` image on 16:9 cards.
+  /// Plex servers are unaffected — they have no equivalent image type.
+  static const preferJellyfinThumbArtwork = BoolPref('prefer_jellyfin_thumb_artwork', defaultValue: true);
+
+  /// Clamped on read as well as write so a hand-edited or migrated value can't
+  /// hand the row layout a negative or absurd gap.
+  static final hubCardGap = DoublePref(
+    'hub_card_gap',
+    defaultValue: HubCardGap.defaultValue,
+    transform: (v) => v.clamp(HubCardGap.min, HubCardGap.max),
+  );
   static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
     'continue_watching_action',
     values: ContinueWatchingAction.values,
@@ -1009,6 +1033,8 @@ class SettingsService extends BaseSharedPreferencesService {
     showUnwatchedCount,
     showEpisodeNumberOnCards,
     showSeasonPostersOnTabs,
+    preferJellyfinThumbArtwork,
+    hubCardGap,
     hideSpoilers,
     showNavBarLabels,
     globalShaderPreset,

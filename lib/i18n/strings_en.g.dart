@@ -531,6 +531,15 @@ class Translations$settings$en {
 	/// en: 'Show season and episode number on episode cards'
 	String get showEpisodeNumberOnCardsDescription => 'Show season and episode number on episode cards';
 
+	/// en: 'Card Spacing'
+	String get cardSpacing => 'Card Spacing';
+
+	/// en: 'Use Jellyfin Thumb Artwork'
+	String get preferJellyfinThumbArtwork => 'Use Jellyfin Thumb Artwork';
+
+	/// en: 'On Jellyfin and Emby, prefer the dedicated landscape Thumb image on wide cards instead of the episode screenshot or movie backdrop'
+	String get preferJellyfinThumbArtworkDescription => 'On Jellyfin and Emby, prefer the dedicated landscape Thumb image on wide cards instead of the episode screenshot or movie backdrop';
+
 	/// en: 'Show Season Posters on Tabs'
 	String get showSeasonPostersOnTabs => 'Show Season Posters on Tabs';
 
@@ -6566,6 +6575,9 @@ extension on Translations {
 			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
 			'settings.showEpisodeNumberOnCards' => 'Show Episode Number on Cards',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
+			'settings.cardSpacing' => 'Card Spacing',
+			'settings.preferJellyfinThumbArtwork' => 'Use Jellyfin Thumb Artwork',
+			'settings.preferJellyfinThumbArtworkDescription' => 'On Jellyfin and Emby, prefer the dedicated landscape Thumb image on wide cards instead of the episode screenshot or movie backdrop',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
@@ -6936,11 +6948,11 @@ extension on Translations {
 			'mediaMenu.deleteEpisodeTitle' => 'Delete this episode?',
 			'mediaMenu.deleteSeasonTitle' => 'Delete this season?',
 			'mediaMenu.deleteShowTitle' => 'Delete this show?',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieTitle' => 'Delete this movie?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Delete episode',
 			'mediaMenu.deleteSeasonConfirm' => 'Delete season',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Delete show',
 			'mediaMenu.deleteMovieConfirm' => 'Delete movie',
 			'mediaMenu.deleteAnyway' => 'Delete anyway',
@@ -7450,11 +7462,11 @@ extension on Translations {
 			'explore.status.upcoming' => 'Upcoming',
 			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			'explore.cast' => 'Cast',
+			_ => null,
+		} ?? switch (path) {
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
 			'explore.removeFromWatchlist' => 'Remove from Watchlist',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Added to watchlist',
 			'explore.removedFromWatchlist' => 'Removed from watchlist',
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
@@ -7964,11 +7976,11 @@ extension on Translations {
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'No network interface found',
 			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Failed to start remote server: ${error}',

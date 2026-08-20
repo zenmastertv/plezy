@@ -237,6 +237,15 @@ sealed class MediaItem with _$MediaItem {
     List<String>? backdropPaths,
     String? clearLogoPath,
     String? backgroundSquarePath,
+
+    /// Jellyfin/Emby `Thumb` — landscape artwork distinct from both the 2:3
+    /// Primary poster and the full-bleed Backdrop. Episodes and seasons rarely
+    /// have their own, so they inherit the series' via `ParentThumbItemId`.
+    ///
+    /// Only requested on the playback-shelf rows (see
+    /// `jellyfinHubRowImageQueryParameters`), so it stays null on items
+    /// that arrived through any other browse call.
+    String? landscapeThumbPath,
     @JsonKey(fromJson: flexibleInt) int? durationMs,
     @JsonKey(fromJson: flexibleInt) int? viewOffsetMs,
     @JsonKey(fromJson: flexibleInt) int? viewCount,
@@ -504,6 +513,10 @@ sealed class MediaItem with _$MediaItem {
   /// Plex-only edition label. Jellyfin returns null.
   String? get editionTitle => null;
 
+  /// Jellyfin/Emby-only landscape artwork. Plex has no separate 16:9 image
+  /// type — its `art` is the full-bleed backdrop — so it returns null.
+  String? get landscapeThumbPath => null;
+
   /// Plex marks unmatched home-video items ("Other Videos" libraries, agent
   /// `tv.plex.agents.none`) as `type="movie"` with `subtype="clip"`. They keep
   /// [MediaKind.movie] so movie-only actions (downloads, add-to, delete from
@@ -516,7 +529,24 @@ sealed class MediaItem with _$MediaItem {
   }
 
   /// Returns the appropriate poster path based on episode poster mode.
-  String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
+  ///
+  /// [preferLandscapeThumb] lets a surface opt into Jellyfin's dedicated
+  /// landscape image for cards that render 16:9. Without it a wide card shows
+  /// the episode's Primary screenshot or — for movies and shows folded into a
+  /// mixed hub — the backdrop, both of which are framed for a different slot
+  /// than the artwork a Jellyfin admin uploads as `Thumb`. Note that an
+  /// episode's landscape art is normally the *series'*, so a shelf with several
+  /// episodes of one show renders the same image for each.
+  String? posterThumb({
+    EpisodePosterMode mode = EpisodePosterMode.seriesPoster,
+    bool mixedHubContext = false,
+    bool preferLandscapeThumb = false,
+  }) {
+    if (preferLandscapeThumb && usesWideAspectRatio(mode, mixedHubContext: mixedHubContext)) {
+      final landscape = landscapeThumbPath;
+      if (landscape != null && landscape.isNotEmpty) return landscape;
+    }
+
     if (kind == MediaKind.episode) {
       switch (mode) {
         case EpisodePosterMode.episodeThumbnail:
@@ -550,16 +580,30 @@ sealed class MediaItem with _$MediaItem {
 
   /// Secondary poster path to try when [posterThumb] returns an image URL that
   /// exists syntactically but the server cannot serve it.
-  String? posterThumbFallback({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
+  String? posterThumbFallback({
+    EpisodePosterMode mode = EpisodePosterMode.seriesPoster,
+    bool mixedHubContext = false,
+    bool preferLandscapeThumb = false,
+  }) {
+    final primary = posterThumb(
+      mode: mode,
+      mixedHubContext: mixedHubContext,
+      preferLandscapeThumb: preferLandscapeThumb,
+    );
     final String? fallback;
-    if (kind == MediaKind.track) {
+    if (preferLandscapeThumb && primary != null && primary == landscapeThumbPath) {
+      // A `Thumb` tag can outlive the file behind it (image deleted on disk,
+      // never re-scanned). Drop back to whatever this card would have shown
+      // without the preference rather than to a broken tile.
+      fallback = posterThumb(mode: mode, mixedHubContext: mixedHubContext);
+    } else if (kind == MediaKind.track) {
       fallback = parentThumbPath;
     } else if (kind == MediaKind.episode && mode == EpisodePosterMode.seasonPoster) {
       fallback = grandparentThumbPath ?? thumbPath;
     } else {
       return null;
     }
-    return fallback != null && fallback != posterThumb(mode: mode, mixedHubContext: mixedHubContext) ? fallback : null;
+    return fallback != null && fallback != primary ? fallback : null;
   }
 
   /// True when the item should render in 16:9.

@@ -1043,8 +1043,19 @@ Widget _buildPosterImage(
       CardShape.poster => ImageType.poster,
       null => MediaImageHelper.cardImageType(item, episodePosterMode, mixedHubContext: mixedHubContext),
     };
-    final defaultPosterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
-    final defaultFallbackUrl = item.posterThumbFallback(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+    // Jellyfin's landscape `Thumb` is only fetched for the playback shelves, so
+    // on every other surface `landscapeThumbPath` is null and the flag is inert.
+    final preferLandscapeThumb = SettingsService.instance.read(SettingsService.preferJellyfinThumbArtwork);
+    final defaultPosterUrl = item.posterThumb(
+      mode: episodePosterMode,
+      mixedHubContext: mixedHubContext,
+      preferLandscapeThumb: preferLandscapeThumb,
+    );
+    final defaultFallbackUrl = item.posterThumbFallback(
+      mode: episodePosterMode,
+      mixedHubContext: mixedHubContext,
+      preferLandscapeThumb: preferLandscapeThumb,
+    );
     final targetPx = knownWidth != null && knownWidth.isFinite && knownWidth > 0
         ? (knownWidth * MediaQuery.devicePixelRatioOf(context)).ceil()
         : null;

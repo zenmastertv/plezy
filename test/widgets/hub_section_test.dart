@@ -135,6 +135,37 @@ void main() {
     expect(outerPadding.padding.resolve(TextDirection.ltr).bottom, 0);
   });
 
+  testWidgets('card spacing setting drives the gap between adjacent cards', (tester) async {
+    final items = [
+      testMediaItem(id: 'gap_a', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Gap A'),
+      testMediaItem(id: 'gap_b', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Gap B'),
+    ];
+
+    Future<double> measureGapAt(double gap) async {
+      await SettingsService.instance.write(SettingsService.hubCardGap, gap);
+      await tester.pumpWidget(
+        _TestApp(
+          child: HubSection(
+            hub: _hubWithAll(items),
+            focusMemory: HubFocusMemory(),
+            icon: Symbols.live_tv_rounded,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final cards = find.byType(MediaCard);
+      expect(cards, findsNWidgets(2));
+      return tester.getTopLeft(cards.at(1)).dx - tester.getTopRight(cards.at(0)).dx;
+    }
+
+    final narrow = await measureGapAt(HubCardGap.min);
+    final wide = await measureGapAt(HubCardGap.max);
+
+    // The cards themselves keep their width; only the space between them moves,
+    // and it moves by exactly the configured amount.
+    expect(wide - narrow, closeTo(HubCardGap.max - HubCardGap.min, 0.001));
+  });
+
   testWidgets('clip-only hub keeps 16:9 cards in a poster episode mode', (tester) async {
     // Clips (home videos) are wide in every mode; only episode/mixed hubs
     // should fold the poster preference back to 2:3 (#2036).
@@ -309,8 +340,17 @@ void main() {
   });
 }
 
-MediaHub _hubWith(MediaItem item) {
-  return MediaHub(id: 'live_tv_hub', title: 'Live TV', type: 'mixed', items: [item], size: 1, serverId: item.serverId);
+MediaHub _hubWith(MediaItem item) => _hubWithAll([item]);
+
+MediaHub _hubWithAll(List<MediaItem> items) {
+  return MediaHub(
+    id: 'live_tv_hub',
+    title: 'Live TV',
+    type: 'mixed',
+    items: items,
+    size: items.length,
+    serverId: items.first.serverId,
+  );
 }
 
 class _TestApp extends StatelessWidget {

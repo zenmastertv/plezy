@@ -6,12 +6,29 @@ import 'plex_constants.dart';
 /// artwork without allowing image-tag payloads to grow without bound.
 const jellyfinBackdropImageLimit = 3;
 
-/// `Thumb` is deliberately absent: `JellyfinMappers` never reads
-/// `ImageTags['Thumb']`, and `parentThumbPath`/`grandparentThumbPath` are built
-/// from the season/series *Primary* tags. Asking for it added a dead image type
-/// to ~40 requests and widened the server's inherited-image parent walk.
+/// `Thumb` is deliberately absent here: `parentThumbPath`/`grandparentThumbPath`
+/// are built from the season/series *Primary* tags, so for these ~35 requests it
+/// would be a dead image type that only widens the server's inherited-image
+/// parent walk. The home-screen rows are the one surface that reads it — see
+/// [jellyfinHubRowImageQueryParameters].
 const jellyfinImageQueryParameters = <String, String>{
   'EnableImageTypes': 'Primary,Backdrop,Logo',
+  'ImageTypeLimit': '$jellyfinBackdropImageLimit',
+};
+
+/// Image types for the home-screen rows: Continue Watching, Next Up and
+/// Recently Added, in both the global and per-library scopes, plus the pages
+/// their "see all" surfaces load.
+///
+/// These rows render their items as 16:9 cards, which is exactly the shape
+/// Jellyfin's `Thumb` image is uploaded for. Requesting it lets
+/// `MediaItem.posterThumb` prefer purpose-made landscape artwork over an
+/// episode screenshot or a cropped movie backdrop. Scoped to the home screen so
+/// the wider inherited-image parent walk is paid on a handful of requests
+/// rather than every browse call — library grids, search and detail pages stay
+/// on [jellyfinImageQueryParameters].
+const jellyfinHubRowImageQueryParameters = <String, String>{
+  'EnableImageTypes': 'Primary,Backdrop,Logo,Thumb',
   'ImageTypeLimit': '$jellyfinBackdropImageLimit',
 };
 
