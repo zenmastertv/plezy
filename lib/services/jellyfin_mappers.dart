@@ -124,7 +124,9 @@ class JellyfinImageAbsolutizer {
     // `landscapeThumbPath` exists only on the Jellyfin variant, so it isn't
     // part of the sealed base's copyWith and needs its own pass.
     return switch (absolutized) {
-      JellyfinMediaItem jellyfin => jellyfin.copyWith(landscapeThumbPath: absolutize(jellyfin.landscapeThumbPath)),
+      final JellyfinMediaItem jellyfin => jellyfin.copyWith(
+        landscapeThumbPath: absolutize(jellyfin.landscapeThumbPath),
+      ),
       _ => absolutized,
     };
   }
