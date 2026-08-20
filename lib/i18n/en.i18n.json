@@ -152,6 +152,7 @@
     "showEpisodeNumberOnCards": "Show Episode Number on Cards",
     "showEpisodeNumberOnCardsDescription": "Show season and episode number on episode cards",
     "cardSpacing": "Card Spacing",
+    "textScale": "Text Size",
     "preferJellyfinThumbArtwork": "Use Jellyfin Thumb Artwork",
     "preferJellyfinThumbArtworkDescription": "On Jellyfin and Emby, prefer the dedicated landscape Thumb image on wide cards instead of the episode screenshot or movie backdrop",
     "showSeasonPostersOnTabs": "Show Season Posters on Tabs",

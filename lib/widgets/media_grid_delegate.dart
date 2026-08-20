@@ -55,22 +55,46 @@ class MediaGridDelegate {
     return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
   }
 
-  static double aspectRatioFor({bool useWideAspectRatio = false, bool fullBleedImage = false, CardShape? shape}) {
+  static double aspectRatioFor({
+    bool useWideAspectRatio = false,
+    bool fullBleedImage = false,
+    CardShape? shape,
+    double textScale = 1.0,
+  }) {
     final resolved = _resolveShape(shape, useWideAspectRatio);
-    if (fullBleedImage) {
-      return switch (resolved) {
-        CardShape.wide => GridLayoutConstants.episodeThumbnailAspectRatio,
-        CardShape.square => GridLayoutConstants.squareAspectRatio,
-        CardShape.poster => GridLayoutConstants.fullCardPosterAspectRatio,
-      };
-    }
+    final image = switch (resolved) {
+      CardShape.wide => GridLayoutConstants.episodeThumbnailAspectRatio,
+      CardShape.square => GridLayoutConstants.squareAspectRatio,
+      CardShape.poster => GridLayoutConstants.fullCardPosterAspectRatio,
+    };
+    // A full-bleed cell is all artwork — no text band to make room for.
+    if (fullBleedImage) return image;
 
-    return switch (resolved) {
+    final cell = switch (resolved) {
       CardShape.wide => GridLayoutConstants.episodeGridCellAspectRatio,
       CardShape.square => GridLayoutConstants.squareGridCellAspectRatio,
       CardShape.poster => GridLayoutConstants.posterAspectRatio,
     };
+    return _withScaledTextBand(image: image, cell: cell, textScale: textScale);
   }
+
+  /// A grid cell is its artwork plus a fixed band of text underneath, and the
+  /// two ratios above encode that as one number. Recovering the band and
+  /// scaling only that keeps artwork the size it was while giving titles the
+  /// room the text multiplier asks for — scaling the whole cell instead would
+  /// grow the posters and drop a column.
+  static double _withScaledTextBand({required double image, required double cell, required double textScale}) {
+    if (textScale == 1.0) return cell;
+    final imageHeight = 1 / image;
+    final bandHeight = (1 / cell) - imageHeight;
+    // Defensive: a cell that is not taller than its image has no band to scale.
+    if (bandHeight <= 0) return cell;
+    return 1 / (imageHeight + bandHeight * textScale);
+  }
+
+  /// The effective text factor — platform scale times the user's multiplier —
+  /// sampled at body size. See `_AppTextScale` in `main.dart`.
+  static double textScaleOf(BuildContext context) => MediaQuery.textScalerOf(context).scale(14) / 14;
 }
 
 /// The grid layout a media grid will render for a given cross-axis extent:
@@ -124,6 +148,7 @@ class MediaGridGeometry {
       useWideAspectRatio: useWideAspectRatio,
       fullBleedImage: fullBleedImage,
       shape: shape,
+      textScale: MediaGridDelegate.textScaleOf(context),
     );
     final maxCrossAxisExtent = MediaGridDelegate._maxCrossAxisExtentFor(
       context: context,

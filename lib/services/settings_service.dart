@@ -187,6 +187,17 @@ class HubCardGap {
   static const double defaultValue = 8;
 }
 
+/// Bounds for [SettingsService.textScale], the app-wide text multiplier.
+///
+/// Capped at 2.0: past that the fixed-height bands under grid and shelf
+/// artwork stop being able to absorb the extra line height even after they
+/// scale, and titles start colliding with the artwork above them.
+class AppTextScale {
+  static const double min = 1.0;
+  static const double max = 2.0;
+  static const double defaultValue = 1.0;
+}
+
 class AutomotiveUiScale {
   static const double min = 1.0;
   static const double max = 2.0;
@@ -633,6 +644,14 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: HubCardGap.defaultValue,
     transform: (v) => v.clamp(HubCardGap.min, HubCardGap.max),
   );
+
+  /// Multiplies the platform's own text scale rather than replacing it, so an
+  /// OS accessibility setting still applies underneath. See `_AppTextScale`.
+  static final textScale = DoublePref(
+    'text_scale',
+    defaultValue: AppTextScale.defaultValue,
+    transform: (v) => v.clamp(AppTextScale.min, AppTextScale.max),
+  );
   static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
     'continue_watching_action',
     values: ContinueWatchingAction.values,
@@ -1035,6 +1054,7 @@ class SettingsService extends BaseSharedPreferencesService {
     showSeasonPostersOnTabs,
     preferJellyfinThumbArtwork,
     hubCardGap,
+    textScale,
     hideSpoilers,
     showNavBarLabels,
     globalShaderPreset,

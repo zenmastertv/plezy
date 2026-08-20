@@ -568,7 +568,11 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                         ? posterWidth // 1:1 for music artwork
                         : posterWidth * 1.5; // 2:3 for poster layout
 
-                    final containerHeight = posterHeight + (isTv ? 48 : 33);
+                    // The band under the artwork holds the title and subtitle, so it has
+                    // to grow with the text multiplier or those clip. Reading it off the
+                    // scaler rather than the pref also picks up an OS accessibility size.
+                    final labelBandHeight = MediaQuery.textScalerOf(context).scale(isTv ? 48 : 33);
+                    final containerHeight = posterHeight + labelBandHeight;
                     final focusBorderWidth = FocusTheme.focusBorderWidth;
                     final focusExtra = focusBorderWidth * 2; // border on both sides
 
@@ -587,6 +591,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     final cardEpoch = (
                       cardWidth,
                       cardGap,
+                      labelBandHeight,
                       posterHeight,
                       useWideLayout,
                       isMixedHub,

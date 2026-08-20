@@ -46,6 +46,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             _languageSelector(context),
             _densitySelector(),
             _cardSpacingSelector(),
+            _textScaleSelector(),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             _viewModeSelector(),
             _episodePosterModeSelector(),
@@ -370,6 +371,39 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 // values would land the padding on half-pixels.
                 divisions: (HubCardGap.max - HubCardGap.min) ~/ 2,
                 onChanged: (value) => SettingsService.instance.write(SettingsService.hubCardGap, value),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _textScaleSelector() {
+    return SettingValueBuilder<double>(
+      pref: SettingsService.textScale,
+      builder: (context, scale, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: .start,
+            children: [
+              Row(
+                children: [
+                  const AppIcon(Symbols.format_size_rounded, fill: 1),
+                  const SizedBox(width: 16),
+                  Text(t.settings.textScale, style: settingsOptionTitleStyle(context)),
+                  const Spacer(),
+                  Text('${scale.toStringAsFixed(2)}×', style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FocusableSlider(
+                value: scale,
+                min: AppTextScale.min,
+                max: AppTextScale.max,
+                divisions: 20,
+                onChanged: (value) => SettingsService.instance.write(SettingsService.textScale, value),
               ),
             ],
           ),

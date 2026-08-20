@@ -1760,7 +1760,7 @@ class _AppShell extends StatelessWidget {
                       const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
                       const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                     },
-                    builder: (context, child) => rootShell(child),
+                    builder: (context, child) => _AppTextScale(child: rootShell(child)),
                   ),
                 ),
               );
@@ -1785,6 +1785,39 @@ Widget rootShell(Widget? child) {
       child: Scaffold(backgroundColor: Colors.transparent, body: child),
     ),
   );
+}
+
+/// Applies [SettingsService.textScale] on top of whatever text scale the
+/// platform already reports.
+///
+/// It *multiplies* the platform factor rather than replacing it, so a phone
+/// with a 1.3× system accessibility size lands on 1.3 × the app multiplier
+/// instead of losing the accessibility setting entirely. The platform factor
+/// is sampled at a body-text size because the composed result has to be handed
+/// back as a linear scaler — a non-linear platform curve is flattened to its
+/// effect on body text, which is where it matters.
+class _AppTextScale extends StatelessWidget {
+  final Widget child;
+
+  const _AppTextScale({required this.child});
+
+  static const double _referenceFontSize = 14;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingValueBuilder<double>(
+      pref: SettingsService.textScale,
+      builder: (context, multiplier, _) {
+        if (multiplier == AppTextScale.defaultValue) return child;
+        final query = MediaQuery.of(context);
+        final platformFactor = query.textScaler.scale(_referenceFontSize) / _referenceFontSize;
+        return MediaQuery(
+          data: query.copyWith(textScaler: TextScaler.linear(platformFactor * multiplier)),
+          child: child,
+        );
+      },
+    );
+  }
 }
 
 /// Apple TV receives a full-HD logical surface, while Android Automotive can

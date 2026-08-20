@@ -131,7 +131,19 @@ class TvBrowseRailLayout {
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
-    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : 0.0;
+    // Read here rather than threaded through callers: this function is also
+    // reached from the height estimators ([maxActiveRailHeight],
+    // [estimateHeight]) and the detail screen, and a caller that forgot to pass
+    // them would reserve a different height than the rail actually renders.
+    final settings = SettingsService.instanceOrNull;
+    final cardGap = settings?.read(SettingsService.hubCardGap) ?? HubCardGap.defaultValue;
+    final textScale = settings?.read(SettingsService.textScale) ?? AppTextScale.defaultValue;
+    // Outside the full-card layout the rail packs cards edge to edge, so the
+    // user's gap is the only separation there is. Left unscaled on purpose —
+    // the setting is expressed in logical pixels and reads as such. Note that
+    // [cardWidthFor] subtracts the gap from the usable width, so a wider gap
+    // narrows the cards rather than overflowing the rail.
+    final itemGap = (fullCardLayout ? fullCardItemGapForScale(scale) : 0.0) + cardGap;
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final emptyEpisodeThumbnailHub =
         hub.items.isEmpty && hub.type == 'episode' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -159,7 +171,10 @@ class TvBrowseRailLayout {
     final posterHeight = (isPersonHub || isSquareHub)
         ? posterWidth
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
-    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 58 : 42) * scale);
+    // The label band holds the title/subtitle, so it grows with the text
+    // multiplier or those clip. Full-card layouts overlay their text and
+    // reserve no band at all.
+    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 58 : 42) * scale * textScale);
     final containerHeight = (posterHeight + labelHeight).ceilToDouble();
     final height = containerHeight + focusExtra + (14 * scale);
 
@@ -1004,10 +1019,15 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   Widget build(BuildContext context) {
     if (_activeHub == null) return const SizedBox.shrink();
     return SettingsBuilder(
-      prefs: const [
+      prefs: [
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
         SettingsService.tvFullCardLayout,
+        // Consumed inside TvBrowseRailLayout.metricsForHub. Listed here so the
+        // rail re-lays-out when they change — DiscoverScreen caches this widget
+        // instance, so a parent rebuild alone would not reach it.
+        SettingsService.hubCardGap,
+        SettingsService.textScale,
       ],
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {

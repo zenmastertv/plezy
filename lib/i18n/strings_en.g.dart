@@ -534,6 +534,9 @@ class Translations$settings$en {
 	/// en: 'Card Spacing'
 	String get cardSpacing => 'Card Spacing';
 
+	/// en: 'Text Size'
+	String get textScale => 'Text Size';
+
 	/// en: 'Use Jellyfin Thumb Artwork'
 	String get preferJellyfinThumbArtwork => 'Use Jellyfin Thumb Artwork';
 
@@ -6576,6 +6579,7 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCards' => 'Show Episode Number on Cards',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.cardSpacing' => 'Card Spacing',
+			'settings.textScale' => 'Text Size',
 			'settings.preferJellyfinThumbArtwork' => 'Use Jellyfin Thumb Artwork',
 			'settings.preferJellyfinThumbArtworkDescription' => 'On Jellyfin and Emby, prefer the dedicated landscape Thumb image on wide cards instead of the episode screenshot or movie backdrop',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
@@ -6947,9 +6951,9 @@ extension on Translations {
 			'mediaMenu.deleteMovieFromServer' => 'Delete movie from server',
 			'mediaMenu.deleteEpisodeTitle' => 'Delete this episode?',
 			'mediaMenu.deleteSeasonTitle' => 'Delete this season?',
-			'mediaMenu.deleteShowTitle' => 'Delete this show?',
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.deleteShowTitle' => 'Delete this show?',
 			'mediaMenu.deleteMovieTitle' => 'Delete this movie?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Delete episode',
 			'mediaMenu.deleteSeasonConfirm' => 'Delete season',
@@ -7461,9 +7465,9 @@ extension on Translations {
 			'explore.status.canceled' => 'Canceled',
 			'explore.status.upcoming' => 'Upcoming',
 			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
-			'explore.cast' => 'Cast',
 			_ => null,
 		} ?? switch (path) {
+			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
 			'explore.removeFromWatchlist' => 'Remove from Watchlist',
@@ -7975,9 +7979,9 @@ extension on Translations {
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
-			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
